@@ -1,23 +1,100 @@
 #include <stdio.h>
 #include <IL/il.h>
 
-int main(int argc, char **argv){
+#define displayInfo 1
+
+int caracs;
+const char chars[17] = {'M','N','D','8','0','Z','$','7','I','?','+','=','~',':',',','.',' '};
+int vec[257];
+int width;
+int height;
+
+void error(char * msg){
+	printf("%s\n", msg);
+	exit(1);
+}
+
+void scale(int newX, int newY){
+	iluScale(newX, newY, 0);
+}
+
+unsigned int setup(char * filename){
+	//Initialize and open the image
 	ILboolean success;
 	unsigned int imageID;
 	
-	//Initialize and open the image
 	ilInit();
 	ilGenImages(1, &imageID);
-	ilBindImage(imageID); 
-	success = ilLoadImage((ILstring)"test.jpg");
+	ilBindImage(imageID);
+	
+	success = ilLoadImage((ILstring)filename);
 	
 	if (!success) {
 		ilDeleteImages(1, &imageID);
-		printf("Failed to open image!\n");
-		return 0;
+		error("Failed to open image!");
 	}
 	
-	//display some info about the image
+	return imageID;
+}
+
+char ** RGBtoGray(){
+	ILubyte * bytes = ilGetData();
+	ILubyte ** image = (char**)malloc(sizeof(char*)*height);
+	
+	int i, j;
+	for (i = 0; i < height; i++){
+		image[i] = (char*)malloc(sizeof(char)*width);
+		
+		for (j = 0; j < width; j++){
+			//printf( "%d,%d ->", i,j); 
+			//printf( "(%d,", bytes[(i*width + j)*3 + 0]); 
+			//printf( "%d,", bytes[(i*width + j)*3 + 1]);
+			//printf( "%d) -> ", bytes[(i*width + j)*3 + 2]);
+			image[i][j] = ((bytes[(i*width + j)*3])+(bytes[(i*width + j)*3+1])+(bytes[(i*width + j)*3+2]))/3;
+			//image[i][j] = bytes[(i*width + j)*3];
+			//printf("%d\n", image[i][j]);
+		}
+//		getchar();
+//		printf("\n");
+	}
+	
+	return image;
+}
+
+void setVec(){
+	//caracs have the number of diferents chars will appear on the .txt, 17 is the max in the moment
+	//in the future caracs will be a parameter, and will have a GUI too
+	int i,j;
+	
+	for (i=1; i<=caracs; i++){
+		int x = ((i-1)*(256./caracs));
+		int y = ((i)*(256./caracs));
+		int z = ((x/256.)*17);
+		for (j=x;j<y;j++){
+			vec[j] = chars[z];
+		}
+	}
+}
+
+void writeOut(char ** image){
+//Just create the output file with the chars
+	FILE * out = fopen("image.txt", "w");
+	int i, j;
+		
+	for (i = 0; i < height; i++){
+		for (j = 0; j < width; j++){
+			fprintf(out, "%c", vec[image[i][j]]);
+			//printf("%c", vec[image[i][j]]);
+			//printf("%d -> %c\n", image[i][j], vec[image[i][j]]);
+		}
+		fprintf(out, "\n");
+		//printf("\n");
+	}
+
+	fclose(out);
+}
+
+void info(){
 	printf("Width: %d, Height %d, Bytes per Pixel %d\n",
             ilGetInteger(IL_IMAGE_WIDTH),
             ilGetInteger(IL_IMAGE_HEIGHT),
@@ -54,58 +131,48 @@ int main(int argc, char **argv){
 	if (ilGetInteger(IL_IMAGE_TYPE) != IL_UNSIGNED_BYTE){
 		printf("We do not tested this data type, but we will try to run...\n");
 	}
+}
 
-	//image is a vector with the image in grayscale 
-	ILubyte * bytes = ilGetData();
-	ILuint width, height;
+int main(int argc, char **argv){
+	unsigned int imageID;
+	char * filename;
+	
+	if (argc >= 2){
+		filename = argv[1];
+	}
+	else{
+		error("imgtochar <filename>");
+	}
+	
+	if (argc >= 3){
+		caracs = atoi(argv[2]);
+		if (caracs < 2 || caracs > 17){
+			error("Wrong number of chars, must to be more then 1 and less than 18");
+		}
+	}
+	else{
+		caracs = 17;
+	}
+	
+	imageID = setup(filename);
+	
+	if (argc >= 5){
+		scale(atoi(argv[2]), atoi(argv[3]));
+	}
+	
 	width = ilGetInteger(IL_IMAGE_WIDTH);
 	height = ilGetInteger(IL_IMAGE_HEIGHT);
 	
-	int i, j;
-	ILubyte image[height][width];
-	
-	for (i = 0; i < height; i++){
-		for (j = 0; j < width; j++){
-			//printf( "%d,%d ->", i,j); 
-			//printf( "(%d,", bytes[(i*width + j)*3 + 0]); 
-			//printf( "%d,", bytes[(i*width + j)*3 + 1]);
-			//printf( "%d) -> ", bytes[(i*width + j)*3 + 2]);
-			image[i][j] = ((bytes[(i*width + j)*3])+(bytes[(i*width + j)*3+1])+(bytes[(i*width + j)*3+2]))/3;
-			//image[i][j] = bytes[(i*width + j)*3];
-			//printf("%d\n", image[i][j]);
-		}
-//		getchar();
-//		printf("\n");
+	if (displayInfo){
+		info();
 	}
 	
-	//caracs have the number of diferents chars will appear on the .txt, 17 is the max in the moment
-	//in the future caracs will be a parameter, and will have a GUI too
-	int caracs = 17;
-	char chars[17] = {'M','N','D','8','0','Z','$','7','I','?','+','=','~',':',',','.',' '};
-	int vec[257];
+	char ** image = RGBtoGray();
 	
-	for (i=1; i<=caracs; i++){
-		int x = ((i-1)*(256./caracs));
-		int y = ((i)*(256./caracs));
-		int z = ((x/256.)*17);
-		for (j=x;j<y;j++){
-			vec[j] = chars[z];
-		}
-	}
+	setVec();
 	
-	//Just create the output file with the chars
-	FILE * out = fopen("image.txt", "w");
-		
-	for (i = 0; i < height; i++){
-		for (j = 0; j < width; j++){
-			fprintf(out, "%c", vec[image[i][j]]);
-			//printf("%c", vec[image[i][j]]);
-			//printf("%d -> %c\n", image[i][j], vec[image[i][j]]);
-		}
-		fprintf(out, "\n");
-		//printf("\n");
-	}
-
-	fclose(out);
+	writeOut(image);
+	
+	printf("done.\n");
 	return 0;
 }
