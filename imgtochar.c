@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <IL/il.h>
 
 #define displayInfo 1
@@ -37,13 +38,13 @@ unsigned int setup(char * filename){
 	return imageID;
 }
 
-char ** RGBtoGray(){
+ILubyte ** RGBtoGray(){
 	ILubyte * bytes = ilGetData();
-	ILubyte ** image = (char**)malloc(sizeof(char*)*height);
+	ILubyte ** image = (ILubyte**)malloc(sizeof(ILubyte*)*height);
 	
 	int i, j;
 	for (i = 0; i < height; i++){
-		image[i] = (char*)malloc(sizeof(char)*width);
+		image[i] = (ILubyte*)malloc(sizeof(ILubyte)*width);
 		
 		for (j = 0; j < width; j++){
 			//printf( "%d,%d ->", i,j); 
@@ -76,7 +77,7 @@ void setVec(){
 	}
 }
 
-void writeOut(char ** image){
+void writeOut(ILubyte ** image){
 //Just create the output file with the chars
 	FILE * out = fopen("image.txt", "w");
 	int i, j;
@@ -167,7 +168,7 @@ int main(int argc, char **argv){
 		info();
 	}
 	
-	char ** image = RGBtoGray();
+	ILubyte ** image = RGBtoGray();
 	
 	setVec();
 	
