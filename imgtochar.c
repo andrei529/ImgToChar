@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <IL/il.h>
+#include <IL/ilu.h>
 
 #define displayInfo 1
 
 int caracs;
 const char chars[17] = {'M','N','D','8','0','Z','$','7','I','?','+','=','~',':',',','.',' '};
+char err[200] = "Usage: imgtochar [options] imagefile\nOptions:\n\t-h\t\tPrint this help\n\t-c\t\tNumber of differents chars\n\t-r\t\t(x y) Number of the output resolution\n";
 int vec[257];
 int width;
 int height;
@@ -135,30 +137,49 @@ void info(){
 }
 
 int main(int argc, char **argv){
-	unsigned int imageID;
-	char * filename;
+	char * filename = NULL;
+	int newX = 0, newY = 0, arg = 1, caracs = 17;
 	
-	if (argc >= 2){
-		filename = argv[1];
-	}
-	else{
-		error("imgtochar <filename>");
-	}
-	
-	if (argc >= 3){
-		caracs = atoi(argv[2]);
-		if (caracs < 2 || caracs > 17){
-			error("Wrong number of chars, must to be more then 1 and less than 18");
+	while(arg < argc){
+		
+		if (argv[arg][0] == '-'){
+			if (arg + 1 == argc){error(err);}
+			char opt = argv[arg][1];
+			
+			switch (opt){
+				case 'r':
+					if (arg + 2 >= argc){error(err);}
+					newX = atoi(argv[++arg]);
+					newY = atoi(argv[++arg]);
+					arg++;
+					break;
+				
+				case 'c':
+					caracs = atoi(argv[++arg]);
+					if (caracs < 2 || caracs > 17){
+						error("Wrong number of chars, must to be more then 1 and less than 18");
+					}
+					arg++;
+					break;
+					
+				default:
+					error(err);
+			}
 		}
-	}
-	else{
-		caracs = 17;
+		else{
+			filename = argv[arg++];
+		}
+		
 	}
 	
-	imageID = setup(filename);
+	if (filename == NULL){
+		error(err);
+	}
 	
-	if (argc >= 5){
-		scale(atoi(argv[2]), atoi(argv[3]));
+	setup(filename);
+	
+	if (newX > 0 && newY > 0){
+		scale(newX, newY);
 	}
 	
 	width = ilGetInteger(IL_IMAGE_WIDTH);
