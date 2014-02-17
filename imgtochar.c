@@ -64,17 +64,27 @@ ILubyte ** RGBtoGray(){
 	return image;
 }
 
-void setVec(){
+void setVec(int caracs){
 	//caracs have the number of diferents chars will appear on the .txt, 17 is the max in the moment
 	//in the future caracs will be a parameter, and will have a GUI too
 	int i,j;
 	
-	for (i=1; i<=caracs; i++){
-		int x = ((i-1)*(256./caracs));
-		int y = ((i)*(256./caracs));
-		int z = ((x/256.)*17);
-		for (j=x;j<y;j++){
-			vec[j] = chars[z];
+	if(caracs == 2){
+		for(i=0;i<129;i++){
+			vec[i] = 'X';
+		}
+		for(i=129;i<258;i++){
+			vec[i] = ' ';
+		}
+	}
+	else{
+		for (i=1; i<=caracs; i++){
+			int x = ((i-1)*(256./caracs));
+			int y = ((i)*(256./caracs));
+			int z = ((x/256.)*17);
+			for (j=x;j<y;j++){
+				vec[j] = chars[z];
+			}
 		}
 	}
 }
@@ -82,16 +92,22 @@ void setVec(){
 void writeOut(ILubyte ** image){
 //Just create the output file with the chars
 	FILE * out = fopen("image.txt", "w");
+	
+	if (out == NULL){
+		error("Failed to write the output");
+	}
+	
 	int i, j;
 		
 	for (i = 0; i < height; i++){
 		for (j = 0; j < width; j++){
 			fprintf(out, "%c", vec[image[i][j]]);
+			printf("%c", vec[image[i][j]]);
 			//printf("%c", vec[image[i][j]]);
 			//printf("%d -> %c\n", image[i][j], vec[image[i][j]]);
 		}
 		fprintf(out, "\n");
-		//printf("\n");
+		printf("\n");
 	}
 
 	fclose(out);
@@ -191,7 +207,7 @@ int main(int argc, char **argv){
 	
 	ILubyte ** image = RGBtoGray();
 	
-	setVec();
+	setVec(caracs);
 	
 	writeOut(image);
 	
